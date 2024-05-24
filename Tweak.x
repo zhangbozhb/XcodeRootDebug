@@ -15,13 +15,23 @@ static NSString *debugserverPath;
 static BOOL isRootUser;
 
 static void reloadSettings() {
-	NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:@"/private/var/mobile/Library/Preferences/com.byteage.xcoderootdebug.plist"];
+	NSString *confPath = @"/private/var/mobile/Library/Preferences/com.byteage.xcoderootdebug.plist";
+	if (![NSFileManager.defaultManager fileExistsAtPath:confPath]) {
+		confPath = @"/var/jb/var/mobile/Library/Preferences/com.byteage.xcoderootdebug.plist";
+	}
+
+	NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:confPath];
 	NSNumber * enabledValue = (NSNumber *)[settings objectForKey:@"enabled"];
 	enabled = (enabledValue)? [enabledValue boolValue] : YES;
 	debugserverPath = [settings objectForKey:@"debugserverPath"];
-	if(!debugserverPath.length) {
-		debugserverPath = @"/usr/bin/debugserver";
-	}
+	
+	NSArray *filePaths = @[@"/var/jb/var/mobile/bin/debugserver", @"/var/jb/usr/bin/debugserver", @"/usr/bin/debugserver"];
+    [filePaths enumerateObjectsUsingBlock:^(NSString*  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([NSFileManager.defaultManager fileExistsAtPath:obj]) {
+            *stop = YES;
+            debugserverPath = obj;
+        }
+    }];
 	NSNumber * isRootUserValue = (NSNumber *)[settings objectForKey:@"isRootUser"];
 	isRootUser = (isRootUserValue)? [isRootUserValue boolValue] : YES;
 }
